@@ -998,561 +998,1199 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center;
     padding: 40px 20px;
-  }
-  .empty-lib-icon {
-    width: 56px; height: 56px;
-    margin-bottom: 12px;
     color: #B0B3B8;
-    opacity: 0.5;
   }
-  .empty-lib-title {
-    font-size: 16px; font-weight: 600;
-    margin-bottom: 6px;
+  .empty-lib svg { width: 60px; height: 60px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-lib h3 { color: #fff; margin-bottom: 8px; }
+
+  /* Audio toggle */
+  .audio-controls {
+    position: absolute;
+    bottom: 100px; right: 16px;
+    z-index: 30;
   }
-  .empty-lib-subtitle {
-    font-size: 12px; color: #B0B3B8;
+
+  /* Loading spinner */
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid rgba(91,224,224,0.2);
+    border-top-color: #5BE0E0;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Hide elements */
+  .hidden { display: none !important; }
+
+  /* Modal */
+  .modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
+  .modal-card {
+    padding: 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal-title {
+    font-size: 18px; font-weight: 700; margin-bottom: 8px;
+  }
+  .modal-body {
+    font-size: 13px; color: #B0B3B8;
+    line-height: 1.5; margin-bottom: 20px;
+  }
+  .modal-actions {
+    display: flex; gap: 10px;
+  }
+
+  /* Onboarding badge */
+  .demo-badge {
+    position: fixed;
+    top: 16px; right: 16px;
+    background: rgba(255, 179, 71, 0.15);
+    border: 1px solid rgba(255, 179, 71, 0.4);
+    color: #FFB347;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 1px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  @media (max-width: 500px) { .demo-badge { display: none; } }
 </style>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
-<div class="phone-frame">
-  <div class="bg-layer"></div>
-  <div class="mountain"></div>
-  <div class="mountain intense" style="animation: drift 180s linear infinite reverse;"></div>
-  <div class="haze"></div>
-  <div class="clouds"></div>
-  <div class="rain" id="rain"></div>
 
-  <!-- RED VIGNETTE WARNING -->
-  <div class="red-vignette" id="red-vignette"></div>
+<div class="demo-badge">V1 · TEST BUILD</div>
+
+<div class="phone-frame">
+  <!-- Animated Background Layers -->
+  <div class="bg-layer"></div>
+  <div class="mountain" id="mountain"></div>
+  <div class="clouds"></div>
+  <div class="haze"></div>
+  <div class="rain" id="rain"></div>
+  <div class="red-vignette" id="redVignette"></div>
   <div class="sunrise" id="sunrise"></div>
 
-  <!-- STATUS BAR -->
+  <!-- Status Bar -->
   <div class="status-bar">
-    <div>9:41</div>
-    <div style="display: flex; gap: 4px; align-items: center;">
-      <span class="lock-icon">🔒</span>
-    </div>
+    <span id="status-time">8:32</span>
+    <span id="status-right">🔋 93</span>
   </div>
 
-  <!-- SCREENS -->
   <div class="screens">
-    <!-- HOME SCREEN -->
+
+    <!-- ===================== HOME SCREEN ===================== -->
     <div class="screen active" id="home-screen">
       <div class="top-row">
-        <div class="pill">🎯 FOCUS MODE</div>
-        <div class="pill">BETA</div>
+        <div class="pill" id="audio-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 13v8M8 13v8M12 15v6M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+          <span id="audio-label">Rain · Lo-Fi</span>
+        </div>
+      </div>
+
+      <h1 class="screen-title">Study Lock</h1>
+      <p class="screen-subtitle">Focus is freedom</p>
+
+      <div class="glass hero-card" id="next-session-card">
+        <div class="session-header">
+          <span class="session-label">NEXT LOCK SESSION</span>
+          <span class="status-badge dim" id="armed-badge"><span class="status-dot" style="display:none"></span>IDLE</span>
+        </div>
+        <div class="session-doc">
+          <div class="pdf-thumb">PDF</div>
+          <div class="session-doc-info">
+            <div class="session-doc-name" id="next-doc-name">No session scheduled</div>
+            <div class="session-doc-meta" id="next-doc-meta">Tap + to create one</div>
+          </div>
+        </div>
+        <div class="session-stats">
+          <div>
+            <div class="session-stat-num" id="next-pages">—</div>
+            <div class="session-stat-label">PAGES</div>
+          </div>
+          <div>
+            <div class="session-stat-num" id="next-time">—</div>
+            <div class="session-stat-label">SCHEDULED</div>
+          </div>
+        </div>
       </div>
 
       <div class="stat-grid">
-        <div class="stat-card glass">
-          <div class="icon">📚</div>
-          <div class="num">2</div>
-          <div class="label">ACTIVE</div>
+        <div class="glass stat-card">
+          <div class="icon">📖</div>
+          <div class="num" id="stat-pages">0</div>
+          <div class="label">PAGES READ</div>
         </div>
-        <div class="stat-card glass">
-          <div class="icon">✓</div>
-          <div class="num">12</div>
-          <div class="label">COMPLETED</div>
-        </div>
-      </div>
-
-      <div class="hero-card glass glow">
-        <div class="session-header">
-          <div class="session-label">SESSION — ACTIVE</div>
-          <div class="status-badge">
-            <span class="status-dot"></span>
-            LIVE
-          </div>
-        </div>
-        <div class="session-doc">
-          <div class="pdf-thumb">PDF</div>
-          <div class="session-doc-info">
-            <div class="session-doc-name">Chemistry_Notes.pdf</div>
-            <div class="session-doc-meta">Page 24 of 156 • 4h 32m</div>
-          </div>
-        </div>
-        <div class="session-stats">
-          <div>
-            <div class="session-stat-num">84%</div>
-            <div class="session-stat-label">COMPREHENSION</div>
-          </div>
-          <div>
-            <div class="session-stat-num">23m</div>
-            <div class="session-stat-label">REMAINING</div>
-          </div>
+        <div class="glass stat-card">
+          <div class="icon">🔥</div>
+          <div class="num" id="stat-streak">0</div>
+          <div class="label">DAY STREAK</div>
         </div>
       </div>
 
-      <div class="hero-card glass glow">
-        <div class="session-header">
-          <div class="session-label">SESSION — SCHEDULED</div>
-          <div class="status-badge dim">
-            <span style="display: inline-block; width: 6px; height: 6px; background: #B0B3B8; border-radius: 50%; margin-right: 4px;"></span>
-            READY
-          </div>
+      <div style="margin-bottom: 100px"></div>
+
+      <div class="glass tab-bar">
+        <div class="tab active" data-screen="home-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span class="tab-label">Home</span>
         </div>
-        <div class="session-doc">
-          <div class="pdf-thumb">PDF</div>
-          <div class="session-doc-info">
-            <div class="session-doc-name">Physics_Exam_Prep.pdf</div>
-            <div class="session-doc-meta">Page 1 of 89 • 2h 15m</div>
-          </div>
+        <div class="tab" data-screen="library-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span class="tab-label">Library</span>
         </div>
-        <div class="session-stats">
-          <div>
-            <div class="session-stat-num">0%</div>
-            <div class="session-stat-label">PROGRESS</div>
-          </div>
-          <div>
-            <div class="session-stat-num">2h 15m</div>
-            <div class="session-stat-label">DURATION</div>
-          </div>
+        <div class="tab" data-screen="setup-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+          <span class="tab-label">New</span>
+        </div>
+        <div class="tab" data-screen="schedule-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span class="tab-label">Schedule</span>
         </div>
       </div>
     </div>
 
-    <!-- SETUP SCREEN -->
+    <!-- ===================== SETUP SCREEN ===================== -->
     <div class="screen" id="setup-screen">
-      <div class="back-btn" onclick="goHome()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
+      <div class="back-btn" data-back="home-screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
       </div>
 
-      <div class="screen-title">NEW SESSION</div>
-      <div class="screen-subtitle">Set up your distraction-free study environment</div>
-
-      <div class="upload-zone glass" id="upload-zone">
-        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="17 8 12 3 7 8"></polyline>
-          <line x1="12" y1="3" x2="12" y2="15"></line>
-        </svg>
-        <div class="upload-title">Upload PDF</div>
-        <div class="upload-subtitle">Drag & drop or click to select</div>
+      <div class="top-row" style="margin-top: 8px">
+        <div class="pill"><span>New Lock Session</span></div>
       </div>
 
-      <div id="file-list"></div>
+      <div class="glass upload-zone" id="upload-zone">
+        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        <div class="upload-title">Drop PDF here or tap to browse</div>
+        <div class="upload-subtitle">Max 500 pages · or use sample</div>
+        <input type="file" id="pdf-input" accept="application/pdf" style="display:none">
+      </div>
 
-      <div class="config-card glass glow">
-        <div class="config-label">SESSION DURATION</div>
-        <div class="time-display" id="time-display">45:00</div>
-        <input type="hidden" id="duration-minutes" value="45">
-        <div class="day-chips">
-          <div class="day-chip active" data-minutes="15">15m</div>
-          <div class="day-chip" data-minutes="30">30m</div>
-          <div class="day-chip" data-minutes="45">45m</div>
-          <div class="day-chip" data-minutes="60">1h</div>
-          <div class="day-chip" data-minutes="120">2h</div>
+      <div class="file-chip hidden" id="file-chip">
+        <div class="pdf-icon">PDF</div>
+        <div class="file-chip-info">
+          <div class="file-chip-name" id="file-chip-name">filename.pdf</div>
+          <div class="file-chip-meta" id="file-chip-meta">0 pages</div>
+        </div>
+        <div class="remove" id="file-remove">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </div>
       </div>
 
-      <div class="config-card glass glow">
-        <div class="config-label">EMERGENCY SETTINGS</div>
+      <div class="glass config-card">
+        <div class="config-label">LOCK TIME</div>
+        <input type="time" class="time-input time-display" id="lock-time" value="21:00">
+        <div class="day-chips" id="day-chips">
+          <div class="day-chip active" data-day="0">M</div>
+          <div class="day-chip active" data-day="1">T</div>
+          <div class="day-chip active" data-day="2">W</div>
+          <div class="day-chip active" data-day="3">T</div>
+          <div class="day-chip active" data-day="4">F</div>
+          <div class="day-chip" data-day="5">S</div>
+          <div class="day-chip" data-day="6">S</div>
+        </div>
+      </div>
+
+      <div class="glass config-card">
+        <div class="config-label">RULES</div>
         <div class="rule-row">
           <div class="rule-text">
-            <div>Allow Emergency Exit</div>
-            <div class="desc">Hold for 5 seconds to unlock</div>
+            Minimum seconds per page
+            <div class="desc">User must spend this long before next</div>
+            <div class="min-time-selector" id="min-time-selector">
+              <div class="min-time-chip" data-sec="5">5s</div>
+              <div class="min-time-chip" data-sec="15">15s</div>
+              <div class="min-time-chip active" data-sec="30">30s</div>
+              <div class="min-time-chip" data-sec="45">45s</div>
+            </div>
           </div>
-          <div class="toggle on" onclick="toggleRule(this)"></div>
         </div>
         <div class="rule-row">
           <div class="rule-text">
-            <div>Stealth Mode</div>
-            <div class="desc">Minimize distractions with minimal UI</div>
+            Scroll tracking required
+            <div class="desc">Must reach 90% scroll depth</div>
           </div>
-          <div class="toggle" onclick="toggleRule(this)"></div>
+          <div class="toggle on" data-rule="scroll"></div>
         </div>
         <div class="rule-row">
           <div class="rule-text">
-            <div>System Notifications</div>
-            <div class="desc">Suppress non-critical notifications</div>
+            Block bypass attempts
+            <div class="desc">Re-engages if you try to escape</div>
           </div>
-          <div class="toggle on" onclick="toggleRule(this)"></div>
+          <div class="toggle on" data-rule="bypass"></div>
         </div>
-      </div>
-
-      <div class="config-card glass glow">
-        <div class="config-label">MINIMUM FOCUS TIME</div>
-        <div class="min-time-selector">
-          <div class="min-time-chip active" data-minutes="10">10 min</div>
-          <div class="min-time-chip" data-minutes="25">25 min</div>
-          <div class="min-time-chip" data-minutes="45">45 min</div>
+        <div class="rule-row">
+          <div class="rule-text">
+            Persist on restart
+            <div class="desc">Resume session on reload</div>
+          </div>
+          <div class="toggle on" data-rule="persist"></div>
         </div>
       </div>
 
       <div class="arm-btn-wrap">
-        <button class="btn primary" onclick="armSession()">
-          <span>🔒</span>
-          <span>ARM SESSION</span>
-        </button>
+        <button class="btn primary" id="arm-btn">⚡ ARM LOCK</button>
+        <button class="btn test-now-btn" id="test-now-btn">▶ Start Now (Test Mode)</button>
       </div>
-      <button class="btn test-now-btn" onclick="goLockdown()">Test Now</button>
     </div>
 
-    <!-- ARMED COUNTDOWN SCREEN -->
-    <div class="screen armed-screen" id="armed-screen">
-      <div style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+    <!-- ===================== ARMED / WAITING SCREEN ===================== -->
+    <div class="screen armed-screen" id="schedule-screen">
+      <div class="back-btn" data-back="home-screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+      </div>
+
+      <div class="top-row" style="margin-top: 8px">
+        <div class="pill"><span>Armed Session</span></div>
+      </div>
+
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
         <div class="ring">
-          <div class="countdown" id="armed-countdown">15:00</div>
+          <div style="text-align:center;">
+            <div class="countdown" id="countdown">—:—:—</div>
+            <div style="font-size:11px; color:#B0B3B8; letter-spacing:2px; margin-top:8px;">UNTIL LOCK</div>
+          </div>
         </div>
-        <h2 class="screen-title" style="margin-bottom: 8px;">Session Starting In</h2>
-        <p class="screen-subtitle">Chemistry_Notes.pdf • 45 minutes</p>
+
+        <div class="glass" style="padding:18px; width:100%; max-width:340px;">
+          <div class="session-doc">
+            <div class="pdf-thumb">PDF</div>
+            <div class="session-doc-info">
+              <div class="session-doc-name" id="armed-doc-name">—</div>
+              <div class="session-doc-meta" id="armed-doc-meta">—</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn" style="max-width:340px; margin-top:20px;" id="cancel-armed">Cancel Session</button>
+        <button class="btn primary" style="max-width:340px; margin-top:10px;" id="start-now-armed">Start Lock Now</button>
       </div>
     </div>
 
-    <!-- LOCKDOWN READING SCREEN -->
+    <!-- ===================== LIBRARY SCREEN ===================== -->
+    <div class="screen" id="library-screen">
+      <div class="top-row">
+        <div class="pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 13v8M8 13v8M12 15v6M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+          <span>Library</span>
+        </div>
+      </div>
+
+      <h1 class="screen-title">Library</h1>
+      <p class="screen-subtitle" id="lib-count">0 documents</p>
+
+      <div class="glass lib-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Search PDFs" id="lib-search-input">
+      </div>
+
+      <div class="lib-filters">
+        <div class="filter-chip active" data-filter="all">All</div>
+        <div class="filter-chip" data-filter="progress">In Progress</div>
+        <div class="filter-chip" data-filter="done">Completed</div>
+        <div class="filter-chip" data-filter="new">Not Started</div>
+      </div>
+
+      <div id="lib-list">
+        <div class="empty-lib">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <h3>No PDFs yet</h3>
+          <p style="font-size:13px;">Upload your first PDF to get started</p>
+        </div>
+      </div>
+
+      <div style="height:100px;"></div>
+
+      <div class="fab" id="fab">+</div>
+
+      <div class="glass tab-bar">
+        <div class="tab" data-screen="home-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span class="tab-label">Home</span>
+        </div>
+        <div class="tab active" data-screen="library-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span class="tab-label">Library</span>
+        </div>
+        <div class="tab" data-screen="setup-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+          <span class="tab-label">New</span>
+        </div>
+        <div class="tab" data-screen="schedule-screen">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span class="tab-label">Schedule</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== LOCKDOWN SCREEN ===================== -->
     <div class="screen" id="lockdown-screen">
+      <div class="top-row">
+        <div class="pill" id="audio-pill-lock">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 13v8M8 13v8M12 15v6M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+          <span>Rain · Lo-Fi</span>
+        </div>
+        <div class="pill locked-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>LOCKED</span>
+        </div>
+      </div>
+
       <div class="doc-header">
-        <div class="doc-title" id="lockdown-title">Chemistry_Notes.pdf</div>
-        <div class="doc-subtitle">Page <span id="current-page">1</span> of <span id="total-pages">0</span></div>
+        <div class="doc-title" id="lock-doc-title">Document</div>
+        <div class="doc-subtitle"><span id="lock-page-current">1</span> of <span id="lock-page-total">1</span></div>
       </div>
 
-      <div class="pdf-viewer">
-        <div class="progress-bar">
-          <div class="progress-fill" id="progress-fill"></div>
-        </div>
-        <div class="pdf-canvas-wrap">
+      <div class="glass glow pdf-viewer">
+        <div class="pdf-canvas-wrap" id="pdf-canvas-wrap">
           <canvas id="pdf-canvas"></canvas>
-          <div class="pdf-fallback" id="pdf-fallback" style="display: none;"></div>
+          <div class="pdf-fallback hidden" id="pdf-fallback">
+            <h2>Sample Reading — The Nature of Focus</h2>
+            <p>Focus is the deliberate narrowing of attention to a single point until the world around it dissolves. In our age of fractured time, it has become the rarest currency — more valuable than information, more powerful than intelligence.</p>
+            <p>What the mind attends to, it becomes. When you scroll, your mind becomes a feed. When you read deeply, your mind becomes the argument you're reading. Every minute you give to a screen of fragments is a minute your brain spends learning to be fragmented.</p>
+            <p>This is why a locked phone is not a punishment. It is a return to the only state in which sustained thought is possible: undivided attention to one thing, for long enough that thinking actually happens.</p>
+            <p>The mountains in the distance do not move. The rain falls. You read. There is nothing else, because there is nothing else you need.</p>
+            <p>The page turns when you have earned it. Not before.</p>
+          </div>
+        </div>
+        <div class="reading-status">
+          <span class="check" id="time-check">⏱ <span id="time-check-text">0s / 30s</span></span>
+          <span class="check pending" id="scroll-check">📜 Scroll to bottom</span>
         </div>
       </div>
 
-      <div class="reading-status">
-        <div class="check ok">
-          <span>✓</span>
-          <span>FOCUSED</span>
-        </div>
-        <div id="time-remaining">23m left</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="lock-progress"></div>
       </div>
 
       <div class="page-nav">
-        <button class="nav-btn disabled" id="prev-btn" onclick="previousPage()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
+        <button class="nav-btn disabled" id="prev-page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <div class="page-counter"><strong id="page-num">1</strong> / <span id="total-num">0</span></div>
-        <button class="nav-btn ready" id="next-btn" onclick="nextPage()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+        <div class="page-counter"><strong id="page-counter-curr">1</strong> / <span id="page-counter-total">1</span></div>
+        <button class="nav-btn disabled" id="next-page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
 
       <div class="lockdown-footer">
-        <span class="lock">🔒</span>
-        <span>LOCKED IN FOCUS MODE</span>
+        <svg class="lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Phone unlocks when reading is complete
       </div>
 
-      <div class="emergency-hold" id="emergency-hold" onmousedown="startEmergencyHold()" onmouseup="endEmergencyHold()" onmouseleave="endEmergencyHold()">
-        Hold to exit
-      </div>
+      <div class="emergency-hold" id="emergency-hold">Hold 3s for emergency exit</div>
 
-      <!-- Bypass warning overlay -->
+      <!-- Bypass overlay -->
       <div class="bypass-overlay" id="bypass-overlay">
-        <div class="bypass-card glass glow-red">
-          <svg class="bypass-icon" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        <div class="glass glow-red bypass-card">
+          <svg class="bypass-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <path d="M12 9v4M12 17h.01"/>
           </svg>
-          <div class="bypass-headline">⚠️ BYPASS ATTEMPT DETECTED</div>
-          <div class="bypass-body">This action violates your study contract. Proceeding may reset your progress.</div>
+          <div class="bypass-headline">LOCKDOWN ACTIVE</div>
+          <div class="bypass-body">You attempted to exit. Study Lock has re-engaged. You cannot leave until reading is complete.</div>
           <div class="bypass-status">
-            <div class="bypass-status-row">
-              <div class="dot red"></div>
-              <span>Authorization Failed</span>
-            </div>
-            <div class="bypass-status-row">
-              <div class="dot cyan"></div>
-              <span>Session Locked</span>
-            </div>
-            <div class="bypass-status-row">
-              <div class="dot green"></div>
-              <span>Monitoring Active</span>
-            </div>
+            <div class="bypass-status-row"><div class="dot red"></div>App switch blocked</div>
+            <div class="bypass-status-row"><div class="dot cyan"></div>Notifications muted</div>
+            <div class="bypass-status-row"><div class="dot green"></div>Auto-resume on restart</div>
           </div>
-          <button class="btn danger" onclick="closeBypassOverlay()">I Understand</button>
-          <div class="bypass-footer">Emergency exit available after minimum focus time</div>
+          <button class="btn primary" id="return-reading">RETURN TO READING</button>
+          <div class="bypass-footer" id="bypass-remaining">Pages remaining: —</div>
         </div>
       </div>
     </div>
 
-    <!-- COMPLETE SCREEN -->
+    <!-- ===================== COMPLETE SCREEN ===================== -->
     <div class="screen" id="complete-screen">
-      <div style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-        <svg class="complete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <h2 class="complete-title">SESSION COMPLETE</h2>
-        <p class="complete-subtitle">Great work! You crushed your study goals.</p>
-
-        <div class="complete-stats">
-          <div>
-            <div class="complete-stat-num">156</div>
-            <div class="complete-stat-label">PAGES READ</div>
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div class="glass glow-green complete-card">
+          <svg class="complete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <path d="m9 11 3 3L22 4"/>
+          </svg>
+          <div class="complete-title">SESSION COMPLETE</div>
+          <div class="complete-subtitle">Phone unlocked. You earned it.</div>
+          <div class="complete-stats">
+            <div>
+              <div class="complete-stat-num" id="cmp-pages">0</div>
+              <div class="complete-stat-label">PAGES</div>
+            </div>
+            <div>
+              <div class="complete-stat-num" id="cmp-time">0m</div>
+              <div class="complete-stat-label">FOCUS</div>
+            </div>
+            <div>
+              <div class="complete-stat-num" id="cmp-streak">1</div>
+              <div class="complete-stat-label">STREAK</div>
+            </div>
           </div>
-          <div>
-            <div class="complete-stat-num">89%</div>
-            <div class="complete-stat-label">COMPREHENSION</div>
-          </div>
-          <div>
-            <div class="complete-stat-num">45m</div>
-            <div class="complete-stat-label">DURATION</div>
-          </div>
+          <button class="btn primary" id="cmp-done">DONE</button>
         </div>
-
-        <button class="btn primary" onclick="goHome()" style="margin-top: 16px;">
-          <span>🏠</span>
-          <span>BACK TO HOME</span>
-        </button>
       </div>
     </div>
 
-    <!-- LIBRARY SCREEN -->
-    <div class="screen" id="library-screen">
-      <div class="lib-search glass">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <path d="m21 21-4.35-4.35"></path>
-        </svg>
-        <input type="text" placeholder="Search sessions...">
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="glass modal-card">
+      <div class="modal-title" id="modal-title">Confirm</div>
+      <div class="modal-body" id="modal-body">Are you sure?</div>
+      <div class="modal-actions">
+        <button class="btn" id="modal-cancel">Cancel</button>
+        <button class="btn primary" id="modal-ok">Confirm</button>
       </div>
-
-      <div class="lib-filters">
-        <div class="filter-chip active">All</div>
-        <div class="filter-chip">Active</div>
-        <div class="filter-chip">Completed</div>
-        <div class="filter-chip">Archived</div>
-      </div>
-
-      <div id="lib-content">
-        <div class="lib-card glass">
-          <div class="pdf-thumb">PDF</div>
-          <div class="lib-card-info">
-            <div class="lib-card-name">Chemistry_Notes.pdf</div>
-            <div class="lib-card-progress">
-              <div class="lib-card-progress-fill" style="width: 84%"></div>
-            </div>
-            <div class="lib-card-meta">84% • 24 of 156 pages</div>
-          </div>
-        </div>
-
-        <div class="lib-card glass">
-          <div class="pdf-thumb">PDF</div>
-          <div class="lib-card-info">
-            <div class="lib-card-name">Physics_Exam_Prep.pdf</div>
-            <div class="lib-card-progress">
-              <div class="lib-card-progress-fill done" style="width: 100%"></div>
-            </div>
-            <div class="lib-card-meta">100% • 89 of 89 pages</div>
-          </div>
-        </div>
-      </div>
-
-      <button class="fab" onclick="goSetup()">+</button>
     </div>
   </div>
 
-  <!-- TAB BAR -->
-  <div class="tab-bar glass">
-    <div class="tab active" onclick="switchTab('home')">
-      <div class="tab-icon">🏠</div>
-      <div class="tab-label">HOME</div>
-    </div>
-    <div class="tab" onclick="switchTab('library')">
-      <div class="tab-icon">📚</div>
-      <div class="tab-label">LIBRARY</div>
-    </div>
-    <div class="tab" onclick="switchTab('settings')">
-      <div class="tab-icon">⚙️</div>
-      <div class="tab-label">SETTINGS</div>
-    </div>
-  </div>
+  <!-- Hidden audio -->
+  <audio id="ambient-audio" loop>
+    <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_1d4f8f6b14.mp3" type="audio/mpeg">
+  </audio>
 </div>
 
 <script>
-  // Initialize rain particles
-  function createRain() {
-    const rainContainer = document.getElementById('rain');
-    for (let i = 0; i < 50; i++) {
-      const drop = document.createElement('div');
-      drop.className = 'raindrop';
-      drop.style.left = Math.random() * 100 + '%';
-      drop.style.top = Math.random() * -100 + '%';
-      drop.style.opacity = Math.random() * 0.5;
-      drop.style.animationDuration = (2 + Math.random() * 1) + 's';
-      drop.style.animationDelay = Math.random() * 2 + 's';
-      rainContainer.appendChild(drop);
-    }
+/* ==============================================================
+   STUDY LOCK — V1 TEST BUILD
+   ============================================================== */
+
+// ---------- State ----------
+const State = {
+  library: JSON.parse(localStorage.getItem('sl_library') || '[]'),
+  stats: JSON.parse(localStorage.getItem('sl_stats') || '{"pages":0,"streak":0,"lastDay":null}'),
+  currentSession: JSON.parse(localStorage.getItem('sl_session') || 'null'),
+  uploadedPdf: null, // { name, size, pages, pdfDoc, dataUrl }
+  config: {
+    time: '21:00',
+    days: [0,1,2,3,4],
+    minSecPerPage: 30,
+    rules: { scroll: true, bypass: true, persist: true }
+  },
+  lockdown: {
+    active: false,
+    docId: null,
+    currentPage: 1,
+    totalPages: 1,
+    pageStartTime: 0,
+    scrolledToBottom: false,
+    sessionStartTime: 0,
+    pagesValidated: new Set()
+  },
+  audioOn: false
+};
+
+function saveState() {
+  localStorage.setItem('sl_library', JSON.stringify(State.library));
+  localStorage.setItem('sl_stats', JSON.stringify(State.stats));
+  localStorage.setItem('sl_session', JSON.stringify(State.currentSession));
+}
+
+// ---------- Rain particle generation ----------
+function createRain() {
+  const rain = document.getElementById('rain');
+  for (let i = 0; i < 60; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'raindrop';
+    drop.style.left = Math.random() * 100 + '%';
+    drop.style.animationDuration = (0.8 + Math.random() * 1.2) + 's';
+    drop.style.animationDelay = Math.random() * 2 + 's';
+    drop.style.opacity = 0.3 + Math.random() * 0.4;
+    rain.appendChild(drop);
   }
-  createRain();
+}
+createRain();
 
-  // Screen navigation
-  function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-  }
+// ---------- Live clock ----------
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  document.getElementById('status-time').textContent =
+    `${(h % 12) || 12}:${m.toString().padStart(2, '0')}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-  function goHome() { showScreen('home-screen'); }
-  function goSetup() { showScreen('setup-screen'); }
-  function goLockdown() { showScreen('lockdown-screen'); }
-  function goComplete() { showScreen('complete-screen'); }
-
-  function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.closest('.tab').classList.add('active');
-    if (tab === 'home') goHome();
-    else if (tab === 'library') showScreen('library-screen');
-  }
-
-  // File upload
-  document.getElementById('upload-zone').addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) addFileChip(file.name);
-    };
-    input.click();
+// ---------- Screen navigation ----------
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // update tab highlighting
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.screen === id);
   });
 
-  function addFileChip(filename) {
-    const fileList = document.getElementById('file-list');
-    const chip = document.createElement('div');
-    chip.className = 'file-chip glass';
-    chip.innerHTML = `
-      <div class="pdf-icon">PDF</div>
-      <div class="file-chip-info">
-        <div class="file-chip-name">${filename}</div>
-        <div class="file-chip-meta">Ready for upload</div>
-      </div>
-      <div class="remove" onclick="this.parentElement.remove()">✕</div>
-    `;
-    fileList.appendChild(chip);
+  if (id === 'lockdown-screen') {
+    document.getElementById('mountain').classList.add('intense');
+  } else {
+    document.getElementById('mountain').classList.remove('intense');
   }
+  if (id === 'complete-screen') {
+    document.getElementById('sunrise').classList.add('active');
+  } else {
+    document.getElementById('sunrise').classList.remove('active');
+  }
+  if (id === 'library-screen') renderLibrary();
+  if (id === 'home-screen') renderHome();
+  if (id === 'schedule-screen') renderSchedule();
+}
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    if (State.lockdown.active) { triggerBypass(); return; }
+    showScreen(t.dataset.screen);
+  });
+});
+document.querySelectorAll('[data-back]').forEach(b => {
+  b.addEventListener('click', () => showScreen(b.dataset.back));
+});
 
-  // Duration selector
-  document.querySelectorAll('.day-chip').forEach(chip => {
-    chip.addEventListener('click', function() {
-      document.querySelectorAll('.day-chip').forEach(c => c.classList.remove('active'));
-      this.classList.add('active');
-      const minutes = this.dataset.minutes;
-      document.getElementById('duration-minutes').value = minutes;
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      document.getElementById('time-display').textContent = 
-        (hours > 0 ? hours + ':' : '') + (mins < 10 ? '0' : '') + mins + ':00';
+// ---------- HOME ----------
+function renderHome() {
+  document.getElementById('stat-pages').textContent = State.stats.pages;
+  document.getElementById('stat-streak').textContent = State.stats.streak;
+
+  if (State.currentSession) {
+    const s = State.currentSession;
+    document.getElementById('next-doc-name').textContent = s.docName;
+    document.getElementById('next-doc-meta').textContent = `${s.pages} pages · ${s.time}`;
+    document.getElementById('next-pages').textContent = s.pages;
+    document.getElementById('next-time').textContent = s.time;
+    const badge = document.getElementById('armed-badge');
+    badge.classList.remove('dim');
+    badge.innerHTML = '<span class="status-dot"></span>ARMED';
+  } else {
+    document.getElementById('next-doc-name').textContent = 'No session scheduled';
+    document.getElementById('next-doc-meta').textContent = 'Tap + to create one';
+    document.getElementById('next-pages').textContent = '—';
+    document.getElementById('next-time').textContent = '—';
+    const badge = document.getElementById('armed-badge');
+    badge.classList.add('dim');
+    badge.innerHTML = 'IDLE';
+  }
+}
+
+// ---------- SETUP / UPLOAD ----------
+const uploadZone = document.getElementById('upload-zone');
+const pdfInput = document.getElementById('pdf-input');
+
+uploadZone.addEventListener('click', () => pdfInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') handlePdf(file);
+});
+pdfInput.addEventListener('change', e => {
+  if (e.target.files[0]) handlePdf(e.target.files[0]);
+});
+
+async function handlePdf(file) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const arrayBuf = await file.arrayBuffer();
+  const dataUrl = await new Promise(r => {
+    const reader = new FileReader();
+    reader.onload = () => r(reader.result);
+    reader.readAsDataURL(file);
+  });
+  const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuf.slice(0) }).promise;
+
+  State.uploadedPdf = {
+    name: file.name,
+    size: file.size,
+    pages: pdfDoc.numPages,
+    pdfDoc: pdfDoc,
+    dataUrl: dataUrl
+  };
+
+  document.getElementById('file-chip').classList.remove('hidden');
+  document.getElementById('file-chip-name').textContent = file.name;
+  document.getElementById('file-chip-meta').textContent =
+    `${pdfDoc.numPages} pages · ${(file.size/1024/1024).toFixed(1)} MB`;
+}
+
+document.getElementById('file-remove').addEventListener('click', () => {
+  State.uploadedPdf = null;
+  document.getElementById('file-chip').classList.add('hidden');
+});
+
+// Day chips
+document.getElementById('day-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.day-chip');
+  if (!chip) return;
+  chip.classList.toggle('active');
+  const day = parseInt(chip.dataset.day);
+  if (chip.classList.contains('active')) {
+    if (!State.config.days.includes(day)) State.config.days.push(day);
+  } else {
+    State.config.days = State.config.days.filter(d => d !== day);
+  }
+});
+
+// Min time chips
+document.getElementById('min-time-selector').addEventListener('click', e => {
+  const chip = e.target.closest('.min-time-chip');
+  if (!chip) return;
+  document.querySelectorAll('#min-time-selector .min-time-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  State.config.minSecPerPage = parseInt(chip.dataset.sec);
+});
+
+// Toggle switches
+document.querySelectorAll('.toggle').forEach(tg => {
+  tg.addEventListener('click', () => {
+    tg.classList.toggle('on');
+    const rule = tg.dataset.rule;
+    if (rule) State.config.rules[rule] = tg.classList.contains('on');
+  });
+});
+
+// Time input
+document.getElementById('lock-time').addEventListener('change', e => {
+  State.config.time = e.target.value;
+});
+
+// ARM LOCK
+document.getElementById('arm-btn').addEventListener('click', () => {
+  if (!State.uploadedPdf) {
+    showModal('No PDF', 'Please upload a PDF first.', 'OK', null);
+    return;
+  }
+  showModal(
+    'Arm this session?',
+    `Lock will engage at ${formatTime(State.config.time)}. You will be unable to use your phone until you finish reading "${State.uploadedPdf.name}".`,
+    'ARM IT',
+    () => {
+      armSession();
+      showScreen('schedule-screen');
+    }
+  );
+});
+
+// TEST NOW
+document.getElementById('test-now-btn').addEventListener('click', () => {
+  if (!State.uploadedPdf) {
+    showModal('No PDF', 'Please upload a PDF first, or click below to use a sample.', 'Use Sample', () => {
+      useSamplePdf();
     });
+    return;
+  }
+  startLockdown(State.uploadedPdf);
+});
+
+function useSamplePdf() {
+  State.uploadedPdf = {
+    name: 'Sample — Nature of Focus.pdf',
+    size: 0,
+    pages: 5,
+    pdfDoc: null, // null = use fallback text
+    dataUrl: null
+  };
+  startLockdown(State.uploadedPdf);
+}
+
+function armSession() {
+  const docId = 'doc_' + Date.now();
+  // Add to library
+  State.library.unshift({
+    id: docId,
+    name: State.uploadedPdf.name,
+    pages: State.uploadedPdf.pages,
+    pagesRead: 0,
+    dataUrl: State.uploadedPdf.dataUrl,
+    status: 'scheduled',
+    createdAt: Date.now()
   });
+  State.currentSession = {
+    docId,
+    docName: State.uploadedPdf.name,
+    pages: State.uploadedPdf.pages,
+    time: formatTime(State.config.time),
+    timeRaw: State.config.time,
+    days: [...State.config.days],
+    config: { ...State.config }
+  };
+  saveState();
+}
 
-  // Toggle rules
-  function toggleRule(el) {
-    el.classList.toggle('on');
+function formatTime(t24) {
+  const [h, m] = t24.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+// ---------- SCHEDULE / COUNTDOWN ----------
+function renderSchedule() {
+  if (!State.currentSession) {
+    document.getElementById('armed-doc-name').textContent = 'No armed session';
+    document.getElementById('armed-doc-meta').textContent = 'Create one in setup';
+    document.getElementById('countdown').textContent = '--:--:--';
+    return;
+  }
+  const s = State.currentSession;
+  document.getElementById('armed-doc-name').textContent = s.docName;
+  document.getElementById('armed-doc-meta').textContent = `${s.pages} pages · daily at ${s.time}`;
+  updateCountdown();
+}
+function updateCountdown() {
+  if (!State.currentSession) return;
+  const now = new Date();
+  const [h, m] = State.currentSession.timeRaw.split(':').map(Number);
+  const target = new Date();
+  target.setHours(h, m, 0, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+  const diff = target - now;
+  const hours = Math.floor(diff / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  document.getElementById('countdown').textContent =
+    `${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+}
+setInterval(updateCountdown, 1000);
+
+document.getElementById('cancel-armed').addEventListener('click', () => {
+  showModal('Cancel session?', 'This will remove the armed lock session.', 'Cancel It', () => {
+    State.currentSession = null;
+    saveState();
+    showScreen('home-screen');
+  });
+});
+document.getElementById('start-now-armed').addEventListener('click', () => {
+  if (!State.currentSession) return;
+  // Get the doc back from library
+  const doc = State.library.find(d => d.id === State.currentSession.docId);
+  if (doc) {
+    startLockdown({
+      name: doc.name,
+      pages: doc.pages,
+      pdfDoc: State.uploadedPdf?.pdfDoc || null,
+      dataUrl: doc.dataUrl
+    }, doc.id);
+  }
+});
+
+// ---------- LIBRARY ----------
+function renderLibrary() {
+  const list = document.getElementById('lib-list');
+  document.getElementById('lib-count').textContent = `${State.library.length} document${State.library.length === 1 ? '' : 's'}`;
+
+  if (State.library.length === 0) {
+    list.innerHTML = `
+      <div class="empty-lib">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <h3>No PDFs yet</h3>
+        <p style="font-size:13px;">Upload your first PDF to get started</p>
+      </div>`;
+    return;
   }
 
-  // Arm session
-  function armSession() {
-    showScreen('armed-screen');
-    let countdown = 15 * 60;
-    const interval = setInterval(() => {
-      const mins = Math.floor(countdown / 60);
-      const secs = countdown % 60;
-      document.getElementById('armed-countdown').textContent = 
-        mins + ':' + (secs < 10 ? '0' : '') + secs;
-      countdown--;
-      if (countdown < 0) {
-        clearInterval(interval);
-        goLockdown();
-        startLockdownSession();
-      }
-    }, 1000);
+  list.innerHTML = State.library.map(d => {
+    const pct = Math.round((d.pagesRead / d.pages) * 100);
+    const done = pct >= 100;
+    return `
+      <div class="glass lib-card" data-id="${d.id}">
+        <div class="pdf-thumb">PDF</div>
+        <div class="lib-card-info">
+          <div class="lib-card-name">${d.name}</div>
+          <div class="lib-card-progress">
+            <div class="lib-card-progress-fill ${done?'done':''}" style="width:${pct}%"></div>
+          </div>
+          <div class="lib-card-meta">${d.pagesRead} / ${d.pages} pages · ${pct}% ${done?'✓':''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('fab').addEventListener('click', () => showScreen('setup-screen'));
+
+// ---------- LOCKDOWN ENGINE ----------
+async function startLockdown(pdf, docId) {
+  State.lockdown.active = true;
+  State.lockdown.docId = docId || ('doc_' + Date.now());
+  State.lockdown.currentPage = 1;
+  State.lockdown.totalPages = pdf.pages;
+  State.lockdown.pageStartTime = Date.now();
+  State.lockdown.scrolledToBottom = false;
+  State.lockdown.sessionStartTime = Date.now();
+  State.lockdown.pagesValidated = new Set();
+  State.lockdown.pdfDoc = pdf.pdfDoc;
+  State.lockdown.pdfName = pdf.name;
+
+  document.getElementById('lock-doc-title').textContent = pdf.name;
+  document.getElementById('lock-page-total').textContent = pdf.pages;
+  document.getElementById('page-counter-total').textContent = pdf.pages;
+
+  showScreen('lockdown-screen');
+
+  // Try to play ambient audio
+  try {
+    const audio = document.getElementById('ambient-audio');
+    audio.volume = 0.3;
+    audio.play().catch(()=>{});
+  } catch(e) {}
+
+  await renderPage(1);
+  startValidationLoop();
+  enableBypassDetection();
+}
+
+async function renderPage(pageNum) {
+  State.lockdown.currentPage = pageNum;
+  State.lockdown.pageStartTime = Date.now();
+  State.lockdown.scrolledToBottom = false;
+
+  document.getElementById('lock-page-current').textContent = pageNum;
+  document.getElementById('page-counter-curr').textContent = pageNum;
+
+  const wrap = document.getElementById('pdf-canvas-wrap');
+  wrap.scrollTop = 0;
+
+  if (State.lockdown.pdfDoc) {
+    // Real PDF
+    document.getElementById('pdf-fallback').classList.add('hidden');
+    document.getElementById('pdf-canvas').classList.remove('hidden');
+    const page = await State.lockdown.pdfDoc.getPage(pageNum);
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    const viewport = page.getViewport({ scale: 1 });
+    const wrapWidth = wrap.clientWidth - 8;
+    const scale = wrapWidth / viewport.width;
+    const scaledViewport = page.getViewport({ scale });
+    canvas.width = scaledViewport.width;
+    canvas.height = scaledViewport.height;
+    await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+  } else {
+    // Fallback text
+    document.getElementById('pdf-fallback').classList.remove('hidden');
+    document.getElementById('pdf-canvas').classList.add('hidden');
+    const samples = [
+      `<h2>Page ${pageNum} — The Nature of Focus</h2>
+       <p>Focus is the deliberate narrowing of attention to a single point until the world around it dissolves. In our age of fractured time, it has become the rarest currency.</p>
+       <p>What the mind attends to, it becomes. When you scroll, your mind becomes a feed. When you read deeply, your mind becomes the argument you are reading.</p>
+       <p>Every minute you give to a screen of fragments is a minute your brain spends learning to be fragmented.</p>
+       <p>The mountains in the distance do not move. The rain falls. You read. There is nothing else, because there is nothing else you need.</p>
+       <p>Scroll down to continue...</p>
+       <p style="margin-top:200px">You reached the bottom. The next page will unlock soon.</p>`,
+      `<h2>Page ${pageNum} — Attention as Architecture</h2>
+       <p>Every notification is a small structural collapse. The mind builds a thought; the buzz comes; the thought falls. You start over. You start over. You start over.</p>
+       <p>Real reading rebuilds the foundation. One paragraph stacked on the next. A scaffolding of ideas held in place by the simple fact that no one has interrupted it.</p>
+       <p>This is the gift the locked phone gives you: a chance to build something that does not get knocked down.</p>
+       <p style="margin-top:200px">Keep reading until you reach the end of the page.</p>`,
+      `<h2>Page ${pageNum} — The Storm and the Lighthouse</h2>
+       <p>Outside the window, the storm is wild. Inside, a single lamp burns over a single page. This is the oldest image of learning — and it remains the truest.</p>
+       <p>The storm is not the enemy. The storm is the context that makes the lamp meaningful. Without the dark, the light is just light. Without distraction, focus is just default.</p>
+       <p>You are choosing the lamp. Every page you finish is one more minute of light in a world that mostly does not have any.</p>
+       <p style="margin-top:200px">You are doing the work. Continue.</p>`,
+      `<h2>Page ${pageNum} — The Compound Interest of Hours</h2>
+       <p>An hour of true focus is worth ten hours of fractured attention. This is not motivational language; it is arithmetic.</p>
+       <p>Fragments cannot compound. Only continuous thought can. A train of reasoning that runs uninterrupted for forty minutes will arrive somewhere a thousand interrupted minutes never will.</p>
+       <p>You are not just reading a book. You are building a kind of mind that fewer and fewer people still have.</p>
+       <p style="margin-top:200px">Almost there. Reach the bottom.</p>`,
+      `<h2>Page ${pageNum} — Earning the Unlock</h2>
+       <p>The unlock is not the prize. The unlock is the proof. By the time the phone returns to you, you will already have the only thing worth having: the experience of having paid attention to something difficult for long enough that it changed you.</p>
+       <p>Then, and only then, you may return to the noise.</p>
+       <p>But you will return as someone who knows what silence feels like — and you will not forget.</p>
+       <p style="margin-top:200px">Final page. Complete the read to unlock.</p>`,
+    ];
+    document.getElementById('pdf-fallback').innerHTML = samples[(pageNum-1) % samples.length];
   }
 
-  // Lockdown session
-  let currentPage = 1;
-  let totalPages = 156;
+  updateLockdownUI();
+}
 
-  function startLockdownSession() {
-    let timeRemaining = 45 * 60;
-    const interval = setInterval(() => {
-      const mins = Math.ceil(timeRemaining / 60);
-      document.getElementById('time-remaining').textContent = mins + 'm left';
-      timeRemaining--;
-      if (timeRemaining < 0) {
-        clearInterval(interval);
-        goComplete();
-      }
-    }, 1000);
-  }
+function updateLockdownUI() {
+  const pct = Math.round((State.lockdown.pagesValidated.size / State.lockdown.totalPages) * 100);
+  document.getElementById('lock-progress').style.width = pct + '%';
 
-  function nextPage() {
-    if (currentPage < totalPages) {
-      currentPage++;
-      updatePageDisplay();
+  // Prev button
+  const prev = document.getElementById('prev-page');
+  prev.classList.toggle('disabled', State.lockdown.currentPage <= 1);
+
+  // Bypass remaining
+  document.getElementById('bypass-remaining').textContent =
+    `Pages remaining: ${State.lockdown.totalPages - State.lockdown.pagesValidated.size}`;
+}
+
+let validationInterval = null;
+function startValidationLoop() {
+  clearInterval(validationInterval);
+  validationInterval = setInterval(() => {
+    if (!State.lockdown.active) return;
+
+    const elapsed = Math.floor((Date.now() - State.lockdown.pageStartTime) / 1000);
+    const min = State.currentSession?.config?.minSecPerPage || State.config.minSecPerPage;
+    document.getElementById('time-check-text').textContent = `${Math.min(elapsed, min)}s / ${min}s`;
+    document.getElementById('time-check').classList.toggle('ok', elapsed >= min);
+    document.getElementById('time-check').classList.toggle('pending', elapsed < min);
+
+    // check scroll
+    const wrap = document.getElementById('pdf-canvas-wrap');
+    const scrolledRatio = (wrap.scrollTop + wrap.clientHeight) / wrap.scrollHeight;
+    const scrollRequired = State.currentSession?.config?.rules?.scroll ?? State.config.rules.scroll;
+    if (scrolledRatio >= 0.9 || !scrollRequired) State.lockdown.scrolledToBottom = true;
+
+    document.getElementById('scroll-check').classList.toggle('ok', State.lockdown.scrolledToBottom);
+    document.getElementById('scroll-check').classList.toggle('pending', !State.lockdown.scrolledToBottom);
+    document.getElementById('scroll-check').innerHTML = State.lockdown.scrolledToBottom
+      ? '📜 ✓ Page read'
+      : '📜 Scroll to bottom';
+
+    // Determine if page can be advanced
+    const canAdvance = elapsed >= min && State.lockdown.scrolledToBottom;
+    const nextBtn = document.getElementById('next-page');
+    nextBtn.classList.toggle('ready', canAdvance);
+    nextBtn.classList.toggle('disabled', !canAdvance);
+  }, 200);
+}
+
+// Page navigation
+document.getElementById('next-page').addEventListener('click', async () => {
+  if (document.getElementById('next-page').classList.contains('disabled')) return;
+
+  // Validate current page
+  State.lockdown.pagesValidated.add(State.lockdown.currentPage);
+
+  // Update library record
+  if (State.lockdown.docId) {
+    const lib = State.library.find(d => d.id === State.lockdown.docId);
+    if (lib) {
+      lib.pagesRead = Math.max(lib.pagesRead, State.lockdown.pagesValidated.size);
+      if (lib.pagesRead >= lib.pages) lib.status = 'done';
+      else lib.status = 'progress';
     }
   }
 
-  function previousPage() {
-    if (currentPage > 1) {
-      currentPage--;
-      updatePageDisplay();
-    }
+  State.stats.pages++;
+  saveState();
+
+  if (State.lockdown.currentPage >= State.lockdown.totalPages) {
+    completeSession();
+  } else {
+    await renderPage(State.lockdown.currentPage + 1);
   }
+});
 
-  function updatePageDisplay() {
-    document.getElementById('current-page').textContent = currentPage;
-    document.getElementById('page-num').textContent = currentPage;
-    document.getElementById('total-num').textContent = totalPages;
-    document.getElementById('prev-btn').classList.toggle('disabled', currentPage === 1);
-    const progress = (currentPage / totalPages) * 100;
-    document.getElementById('progress-fill').style.width = progress + '%';
+document.getElementById('prev-page').addEventListener('click', async () => {
+  if (document.getElementById('prev-page').classList.contains('disabled')) return;
+  if (State.lockdown.currentPage > 1) {
+    await renderPage(State.lockdown.currentPage - 1);
   }
+});
 
-  updatePageDisplay();
+// Scroll tracking
+document.getElementById('pdf-canvas-wrap').addEventListener('scroll', e => {
+  const wrap = e.target;
+  const scrolledRatio = (wrap.scrollTop + wrap.clientHeight) / wrap.scrollHeight;
+  if (scrolledRatio >= 0.9) State.lockdown.scrolledToBottom = true;
+});
 
-  // Emergency hold
-  let holdTime = 0;
-  let holdInterval;
-
-  function startEmergencyHold() {
-    holdTime = 0;
-    document.getElementById('emergency-hold').classList.add('holding');
-    holdInterval = setInterval(() => {
-      holdTime += 100;
-      if (holdTime >= 5000) {
-        clearInterval(holdInterval);
-        showBypassOverlay();
-      }
-    }, 100);
-  }
-
-  function endEmergencyHold() {
-    clearInterval(holdInterval);
-    document.getElementById('emergency-hold').classList.remove('holding');
-    if (holdTime >= 5000) {
-      goHome();
-      holdTime = 0;
-    }
-  }
-
-  function showBypassOverlay() {
-    document.getElementById('bypass-overlay').classList.add('active');
-  }
-
-  function closeBypassOverlay() {
-    document.getElementById('bypass-overlay').classList.remove('active');
-  }
-
-  // Prevent right-click
-  document.addEventListener('contextmenu', (e) => {
-    if (document.getElementById('lockdown-screen').classList.contains('active')) {
+// ---------- BYPASS DETECTION ----------
+function enableBypassDetection() {
+  // Visibility change (tab switch / minimize)
+  document.addEventListener('visibilitychange', onBypassAttempt);
+  // Blur
+  window.addEventListener('blur', onBypassAttempt);
+  // Back button / browser nav
+  window.addEventListener('popstate', onBypassAttempt);
+  history.pushState({ lock: true }, '');
+  // Beforeunload
+  window.addEventListener('beforeunload', e => {
+    if (State.lockdown.active) {
       e.preventDefault();
+      e.returnValue = 'Lockdown is active. Are you sure?';
+      return e.returnValue;
     }
   });
+  // Context menu disable
+  document.addEventListener('contextmenu', e => {
+    if (State.lockdown.active) e.preventDefault();
+  });
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (!State.lockdown.active) return;
+    // block F12, Ctrl+W, Ctrl+T, Cmd+W etc.
+    if (e.key === 'F12' || e.key === 'Escape' ||
+        ((e.ctrlKey || e.metaKey) && ['w','t','n','r','q','l'].includes(e.key.toLowerCase()))) {
+      e.preventDefault();
+      triggerBypass();
+    }
+  });
+}
+
+let bypassCount = 0;
+function onBypassAttempt() {
+  if (!State.lockdown.active) return;
+  if (document.hidden) {
+    bypassCount++;
+    setTimeout(() => triggerBypass(), 200);
+  }
+}
+
+function triggerBypass() {
+  if (!State.lockdown.active) return;
+  if (!State.currentSession?.config?.rules?.bypass && !State.config.rules.bypass) return;
+  document.getElementById('bypass-overlay').classList.add('active');
+  document.getElementById('redVignette').classList.add('active');
+  // Push state again to block back
+  history.pushState({ lock: true }, '');
+}
+
+document.getElementById('return-reading').addEventListener('click', () => {
+  document.getElementById('bypass-overlay').classList.remove('active');
+  document.getElementById('redVignette').classList.remove('active');
+});
+
+// ---------- EMERGENCY EXIT (3s hold) ----------
+let emergencyTimer = null;
+let emergencyStartTime = 0;
+const emergencyEl = document.getElementById('emergency-hold');
+
+function startEmergency(e) {
+  e.preventDefault();
+  emergencyStartTime = Date.now();
+  emergencyEl.classList.add('holding');
+  emergencyEl.textContent = 'Hold... 3s';
+  emergencyTimer = setInterval(() => {
+    const held = (Date.now() - emergencyStartTime) / 1000;
+    if (held >= 3) {
+      endEmergency();
+      showModal(
+        'Emergency Exit',
+        'You are about to abandon this lock session. Your streak and progress will not advance. Continue?',
+        'Exit Lock',
+        () => {
+          abandonLockdown();
+        }
+      );
+    } else {
+      emergencyEl.textContent = `Hold... ${(3 - held).toFixed(1)}s`;
+    }
+  }, 100);
+}
+function endEmergency() {
+  clearInterval(emergencyTimer);
+  emergencyEl.classList.remove('holding');
+  emergencyEl.textContent = 'Hold 3s for emergency exit';
+}
+emergencyEl.addEventListener('mousedown', startEmergency);
+emergencyEl.addEventListener('touchstart', startEmergency, { passive: false });
+emergencyEl.addEventListener('mouseup', endEmergency);
+emergencyEl.addEventListener('mouseleave', endEmergency);
+emergencyEl.addEventListener('touchend', endEmergency);
+
+function abandonLockdown() {
+  State.lockdown.active = false;
+  clearInterval(validationInterval);
+  document.getElementById('redVignette').classList.remove('active');
+  document.getElementById('bypass-overlay').classList.remove('active');
+  try { document.getElementById('ambient-audio').pause(); } catch(e) {}
+  showScreen('home-screen');
+}
+
+function completeSession() {
+  State.lockdown.active = false;
+  clearInterval(validationInterval);
+  document.getElementById('redVignette').classList.remove('active');
+
+  // update stats
+  const day = new Date().toDateString();
+  if (State.stats.lastDay !== day) {
+    State.stats.streak = (State.stats.lastDay) ? State.stats.streak + 1 : 1;
+    State.stats.lastDay = day;
+  }
+  saveState();
+
+  const focusMs = Date.now() - State.lockdown.sessionStartTime;
+  const focusMin = Math.max(1, Math.floor(focusMs / 60000));
+
+  document.getElementById('cmp-pages').textContent = `${State.lockdown.totalPages}/${State.lockdown.totalPages}`;
+  document.getElementById('cmp-time').textContent = focusMin < 60
+    ? `${focusMin}m`
+    : `${Math.floor(focusMin/60)}h ${focusMin%60}m`;
+  document.getElementById('cmp-streak').textContent = State.stats.streak;
+
+  try { document.getElementById('ambient-audio').pause(); } catch(e) {}
+  showScreen('complete-screen');
+}
+
+document.getElementById('cmp-done').addEventListener('click', () => {
+  // Clear current session if matches
+  if (State.currentSession && State.currentSession.docId === State.lockdown.docId) {
+    State.currentSession = null;
+    saveState();
+  }
+  showScreen('home-screen');
+});
+
+// ---------- AUDIO TOGGLE ----------
+const audioPills = [document.getElementById('audio-pill'), document.getElementById('audio-pill-lock')];
+audioPills.forEach(p => p && p.addEventListener('click', toggleAudio));
+function toggleAudio() {
+  const audio = document.getElementById('ambient-audio');
+  if (State.audioOn) {
+    audio.pause();
+    State.audioOn = false;
+    audioPills.forEach(p => p && (p.style.opacity = '0.6'));
+  } else {
+    audio.volume = 0.3;
+    audio.play().catch(()=>{
+      showModal('Audio blocked', 'Your browser blocked autoplay. Tap anywhere then try again.', 'OK', null);
+    });
+    State.audioOn = true;
+    audioPills.forEach(p => p && (p.style.opacity = '1'));
+  }
+}
+
+// ---------- MODAL ----------
+function showModal(title, body, okText, onOk) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  document.getElementById('modal-ok').textContent = okText || 'OK';
+  document.getElementById('modal').classList.add('active');
+  const okBtn = document.getElementById('modal-ok');
+  const cancelBtn = document.getElementById('modal-cancel');
+
+  const newOk = okBtn.cloneNode(true);
+  const newCancel = cancelBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOk, okBtn);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+  newOk.addEventListener('click', () => {
+    document.getElementById('modal').classList.remove('active');
+    if (onOk) onOk();
+  });
+  newCancel.addEventListener('click', () => {
+    document.getElementById('modal').classList.remove('active');
+  });
+
+  newCancel.style.display = onOk ? 'flex' : 'none';
+}
+
+// ---------- INIT ----------
+renderHome();
+renderLibrary();
+renderSchedule();
+
+// Persist resume — if session is mid-lockdown and persist is on, resume on load
+// (in v1, we just resume the home screen)
+
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

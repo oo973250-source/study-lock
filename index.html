@@ -1242,6 +1242,14 @@
         </div>
       </div>
 
+      <div class="glass config-card">
+        <div class="config-label">FOR A REAL DEVICE LOCK</div>
+        <p style="font-size:12px; color:#B0B3B8; line-height:1.6; margin:0;">
+          Study Lock can fill your screen and detect if you switch away — but no website can block other apps for you, that permission doesn't exist in any mobile browser.
+          For a true lock, before you tap Start: on <strong style="color:#E4E6EB;">Android</strong>, open Recents → tap this app's icon → <strong style="color:#E4E6EB;">Pin</strong>. On <strong style="color:#E4E6EB;">iPhone</strong>, triple-click the side button to start <strong style="color:#E4E6EB;">Guided Access</strong>.
+        </p>
+      </div>
+
       <div class="arm-btn-wrap">
         <button class="btn primary" id="arm-btn">⚡ ARM LOCK</button>
         <button class="btn test-now-btn" id="test-now-btn">▶ Start Now (Test Mode)</button>
@@ -1457,10 +1465,6 @@
     </div>
   </div>
 
-  <!-- Hidden audio -->
-  <audio id="ambient-audio" loop>
-    <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_1d4f8f6b14.mp3" type="audio/mpeg">
-  </audio>
 </div>
 
 <script>
@@ -1498,6 +1502,74 @@ function saveState() {
   localStorage.setItem('sl_stats', JSON.stringify(State.stats));
   localStorage.setItem('sl_session', JSON.stringify(State.currentSession));
 }
+
+// ---------- AMBIENT AUDIO (procedural — generated in-browser, no external file/CDN) ----------
+// The old version streamed an mp3 from a third-party CDN, which is why it silently failed
+// (dead/hotlink-blocked URL + errors were swallowed). This generates a soft rain/noise bed
+// locally with the Web Audio API, so there is nothing to download and nothing to break.
+const AmbientAudio = (() => {
+  let ctx = null, source = null, gainNode = null, playing = false;
+
+  function ensureContext() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function buildNoiseBuffer(c) {
+    const bufferSize = 2 * c.sampleRate;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    let lastOut = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      lastOut = (lastOut + 0.02 * white) / 1.02; // brown-ish noise = softer, more "rain" than hiss
+      data[i] = lastOut * 3.5;
+    }
+    return buffer;
+  }
+
+  function start() {
+    if (playing) return true;
+    try {
+      const c = ensureContext();
+      source = c.createBufferSource();
+      source.buffer = buildNoiseBuffer(c);
+      source.loop = true;
+
+      const filter = c.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1000;
+
+      gainNode = c.createGain();
+      gainNode.gain.setValueAtTime(0, c.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.16, c.currentTime + 1.2);
+
+      source.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(c.destination);
+      source.start(0);
+      playing = true;
+      return true;
+    } catch (e) {
+      playing = false;
+      return false;
+    }
+  }
+
+  function stop() {
+    if (!playing || !gainNode || !ctx) { playing = false; return; }
+    const c = ctx;
+    const src = source;
+    gainNode.gain.linearRampToValueAtTime(0, c.currentTime + 0.4);
+    setTimeout(() => { try { src.stop(); } catch (e) {} }, 450);
+    playing = false;
+  }
+
+  function isPlaying() { return playing; }
+
+  return { start, stop, isPlaying };
+})();
 
 // ---------- Rain particle generation ----------
 function createRain() {
@@ -1673,7 +1745,7 @@ document.getElementById('arm-btn').addEventListener('click', () => {
   }
   showModal(
     'Arm this session?',
-    `Lock will engage at ${formatTime(State.config.time)}. You will be unable to use your phone until you finish reading "${State.uploadedPdf.name}".`,
+    `Lock will engage at ${formatTime(State.config.time)} for "${State.uploadedPdf.name}". Study Lock will fill the screen and flag it if you leave the tab — but for a real device lock, turn on Screen Pinning (Android) or Guided Access (iPhone) first. See the tip on the setup screen.`,
     'ARM IT',
     () => {
       armSession();
@@ -1786,21 +1858,46 @@ document.getElementById('start-now-armed').addEventListener('click', () => {
 });
 
 // ---------- LIBRARY ----------
+let libraryFilter = 'all';
+
+// The filter chips had no click handler at all before — they rendered but did nothing.
+// Event delegation on the container catches all four without needing four separate listeners.
+document.querySelector('.lib-filters').addEventListener('click', (e) => {
+  const chip = e.target.closest('.filter-chip');
+  if (!chip) return;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  libraryFilter = chip.dataset.filter;
+  renderLibrary();
+});
+
+function statusOf(d) {
+  const pct = d.pages ? (d.pagesRead / d.pages) * 100 : 0;
+  if (d.pagesRead === 0) return 'new';
+  if (pct >= 100) return 'done';
+  return 'progress';
+}
+
 function renderLibrary() {
   const list = document.getElementById('lib-list');
   document.getElementById('lib-count').textContent = `${State.library.length} document${State.library.length === 1 ? '' : 's'}`;
 
-  if (State.library.length === 0) {
+  const filtered = libraryFilter === 'all'
+    ? State.library
+    : State.library.filter(d => statusOf(d) === libraryFilter);
+
+  if (filtered.length === 0) {
+    const empty = State.library.length === 0;
     list.innerHTML = `
       <div class="empty-lib">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <h3>No PDFs yet</h3>
-        <p style="font-size:13px;">Upload your first PDF to get started</p>
+        <h3>${empty ? 'No PDFs yet' : 'No matches'}</h3>
+        <p style="font-size:13px;">${empty ? 'Upload your first PDF to get started' : 'Try a different filter'}</p>
       </div>`;
     return;
   }
 
-  list.innerHTML = State.library.map(d => {
+  list.innerHTML = filtered.map(d => {
     const pct = Math.round((d.pagesRead / d.pages) * 100);
     const done = pct >= 100;
     return `
@@ -1837,17 +1934,49 @@ async function startLockdown(pdf, docId) {
   document.getElementById('page-counter-total').textContent = pdf.pages;
 
   showScreen('lockdown-screen');
+  enterLockPresentation();
 
-  // Try to play ambient audio
-  try {
-    const audio = document.getElementById('ambient-audio');
-    audio.volume = 0.3;
-    audio.play().catch(()=>{});
-  } catch(e) {}
+  // Start ambient sound if it was toggled on (no network/CDN involved, can't be "blocked")
+  if (State.audioOn) AmbientAudio.start();
 
   await renderPage(1);
   startValidationLoop();
   enableBypassDetection();
+}
+
+// ---------- LOCK PRESENTATION (fullscreen + wake lock) ----------
+// Important: this is the ceiling of what a website/PWA is technically allowed to do.
+// A browser tab can go fullscreen and keep the screen awake, and it can DETECT when you
+// switch away (see BYPASS DETECTION below) — but no website can prevent you from pressing
+// the home button or opening another app. That permission simply does not exist for web
+// pages on Android or iOS; only the OS itself (Screen Pinning / Guided Access, below) or a
+// native app with special device-admin permissions can truly block other apps.
+let wakeLock = null;
+
+async function enterLockPresentation() {
+  try {
+    if (document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen();
+    } else if (document.documentElement.webkitRequestFullscreen) {
+      document.documentElement.webkitRequestFullscreen();
+    }
+  } catch (e) { /* fullscreen can be denied (e.g. iOS Safari) — session still works, just not edge-to-edge */ }
+
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (e) { /* wake lock can fail on low battery etc. — non-fatal */ }
+}
+
+function exitLockPresentation() {
+  try {
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+  } catch (e) {}
+  try {
+    if (wakeLock) { wakeLock.release(); wakeLock = null; }
+  } catch (e) {}
 }
 
 async function renderPage(pageNum) {
@@ -2001,15 +2130,23 @@ document.getElementById('pdf-canvas-wrap').addEventListener('scroll', e => {
 });
 
 // ---------- BYPASS DETECTION ----------
+let bypassDetectionEnabled = false;
 function enableBypassDetection() {
-  // Visibility change (tab switch / minimize)
+  if (bypassDetectionEnabled) { history.pushState({ lock: true }, ''); return; } // already wired from a prior session
+  bypassDetectionEnabled = true;
+
+  // Visibility change (tab switch / minimize / screen off)
   document.addEventListener('visibilitychange', onBypassAttempt);
-  // Blur
+  // Blur (e.g. opening the app switcher without fully hiding the doc yet)
   window.addEventListener('blur', onBypassAttempt);
+  // Exiting fullscreen is also a common way people try to get back to browser chrome
+  document.addEventListener('fullscreenchange', () => {
+    if (State.lockdown.active && !document.fullscreenElement) onBypassAttempt();
+  });
   // Back button / browser nav
   window.addEventListener('popstate', onBypassAttempt);
   history.pushState({ lock: true }, '');
-  // Beforeunload
+  // Beforeunload — only works for in-browser navigation/close, not for the OS home button
   window.addEventListener('beforeunload', e => {
     if (State.lockdown.active) {
       e.preventDefault();
@@ -2021,10 +2158,9 @@ function enableBypassDetection() {
   document.addEventListener('contextmenu', e => {
     if (State.lockdown.active) e.preventDefault();
   });
-  // Keyboard shortcuts
+  // Keyboard shortcuts (desktop testing mostly, harmless on mobile)
   document.addEventListener('keydown', e => {
     if (!State.lockdown.active) return;
-    // block F12, Ctrl+W, Ctrl+T, Cmd+W etc.
     if (e.key === 'F12' || e.key === 'Escape' ||
         ((e.ctrlKey || e.metaKey) && ['w','t','n','r','q','l'].includes(e.key.toLowerCase()))) {
       e.preventDefault();
@@ -2039,6 +2175,9 @@ function onBypassAttempt() {
   if (document.hidden) {
     bypassCount++;
     setTimeout(() => triggerBypass(), 200);
+  } else if (!wakeLock) {
+    // Tab is visible again — silently try to re-acquire the wake lock (browsers release it on hide)
+    try { navigator.wakeLock?.request('screen').then(wl => wakeLock = wl).catch(()=>{}); } catch (e) {}
   }
 }
 
@@ -2099,7 +2238,8 @@ function abandonLockdown() {
   clearInterval(validationInterval);
   document.getElementById('redVignette').classList.remove('active');
   document.getElementById('bypass-overlay').classList.remove('active');
-  try { document.getElementById('ambient-audio').pause(); } catch(e) {}
+  AmbientAudio.stop();
+  exitLockPresentation();
   showScreen('home-screen');
 }
 
@@ -2125,7 +2265,8 @@ function completeSession() {
     : `${Math.floor(focusMin/60)}h ${focusMin%60}m`;
   document.getElementById('cmp-streak').textContent = State.stats.streak;
 
-  try { document.getElementById('ambient-audio').pause(); } catch(e) {}
+  AmbientAudio.stop();
+  exitLockPresentation();
   showScreen('complete-screen');
 }
 
@@ -2142,16 +2283,16 @@ document.getElementById('cmp-done').addEventListener('click', () => {
 const audioPills = [document.getElementById('audio-pill'), document.getElementById('audio-pill-lock')];
 audioPills.forEach(p => p && p.addEventListener('click', toggleAudio));
 function toggleAudio() {
-  const audio = document.getElementById('ambient-audio');
   if (State.audioOn) {
-    audio.pause();
+    AmbientAudio.stop();
     State.audioOn = false;
     audioPills.forEach(p => p && (p.style.opacity = '0.6'));
   } else {
-    audio.volume = 0.3;
-    audio.play().catch(()=>{
-      showModal('Audio blocked', 'Your browser blocked autoplay. Tap anywhere then try again.', 'OK', null);
-    });
+    const ok = AmbientAudio.start();
+    if (!ok) {
+      showModal('Audio unavailable', 'This browser does not support Web Audio, so ambient sound can\'t play here.', 'OK', null);
+      return;
+    }
     State.audioOn = true;
     audioPills.forEach(p => p && (p.style.opacity = '1'));
   }
